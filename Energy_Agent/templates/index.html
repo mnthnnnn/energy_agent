@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>⚡ Energy-Waste AI Agent</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Typing effect cursor */
+    #streamed-output {
+      font-family: monospace;
+      white-space: pre-wrap;
+      border-right: 2px solid cyan;
+      animation: blink 0.7s infinite;
+    }
+    @keyframes blink {
+      0% { border-color: transparent; }
+      50% { border-color: cyan; }
+      100% { border-color: transparent; }
+    }
+    /* Loader overlay */
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+    #loader .spinner {
+      border: 6px solid rgba(255,255,255,0.2);
+      border-top: 6px solid cyan;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-purple-900 to-black text-white font-sans min-h-screen flex items-center justify-center">
+  <div class="backdrop-blur-xl bg-white/10 border border-purple-400/30 rounded-2xl shadow-2xl p-8 max-w-4xl w-full">
+    <h1 class="text-4xl font-extrabold text-purple-300 mb-6 text-center">⚡ Energy-Waste AI Agent</h1>
+    
+    <!-- FIXED: form now posts to /stream -->
+    <form method="POST" action="/stream" class="space-y-4" id="agent-form">
+      <textarea name="user_text" rows="4" class="w-full p-4 rounded-lg bg-black/40 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-400" placeholder="Enter details (appliances, hours, location, issues)..."></textarea>
+      <button type="submit" class="w-full py-3 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 hover:from-purple-400 hover:to-pink-500 text-white font-bold shadow-lg animate-pulse">Run Agent</button>
+    </form>
+
+    <div id="results" class="mt-8 space-y-6 hidden">
+      <!-- Output Generator Card -->
+      <div class="p-6 rounded-xl backdrop-blur-lg bg-white/10 border border-purple-400/30 shadow-lg hover:shadow-purple-500/50 transition">
+        <h2 class="text-xl font-semibold text-purple-300 mb-2">💡 Output Generator</h2>
+        <p id="streamed-output" class="text-sm"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loader -->
+  <div id="loader">
+    <div class="spinner"></div>
+    <p class="ml-4 text-cyan-300 text-xl">⚡ Thinking...</p>
+  </div>
+
+  <script>
+    const form = document.getElementById("agent-form");
+    const results = document.getElementById("results");
+    const streamedOutput = document.getElementById("streamed-output");
+    const loader = document.getElementById("loader");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      streamedOutput.textContent = "";
+      results.classList.remove("hidden");
+      loader.style.display = "flex";
+
+      const formData = new FormData(form);
+      const response = await fetch("/stream", {
+        method: "POST",
+        body: formData
+      });
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        streamedOutput.textContent += decoder.decode(value);
+      }
+
+      loader.style.display = "none";
+    });
+  </script>
+</body>
+</html>
